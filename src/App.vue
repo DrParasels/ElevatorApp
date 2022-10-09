@@ -2,19 +2,19 @@
   <div class="container">
     <transition
       name="move-elevator"
-      :style="{ transform: `translateY(${abc}em)` }"
+      :style="{ transform: `translateY(${-abc}em)` }"
     >
       <div class="elevator"></div>
     </transition>
     <div
       class="floor"
       ref="height"
-      v-for="(item, idx) of this.floors.length"
+      v-for="(item, idx) of this.floors"
       :key="idx"
     >
       <div class="lift-shaft"></div>
       <div class="hall">
-        <div class="floor-num">{{ this.floors.length - idx }}</div>
+        <div class="floor-num">{{ this.floors[idx] }}</div>
         <button @click="call(item)" :style="styleObject(item)" class="call-btn">
           <span></span>
         </button>
@@ -28,8 +28,8 @@ export default {
   name: "App",
   data() {
     return {
-      floors: [1, 2, 3],
-      toggleCall: "transparent",
+      floors: [5, 4, 3, 2, 1],
+      floor: 1,
       selectedItem: [],
       abc: 0,
     };
@@ -45,9 +45,13 @@ export default {
     },
     call(item) {
       this.selectedItem.push(item);
-      console.log(item);
-      this.abc = -10;
-      this.selectedItem.splice();
+      if (this.floor < item) {
+        this.abc += (item - this.floor) * 5;
+      } else {
+        this.abc -= (this.floor - item) * 5;
+      }
+      this.floor = item;
+      // this.selectedItem = this.selectedItem.splice(item, 1);
     },
     styleObject(item) {
       return {
@@ -94,7 +98,7 @@ body {
   width: 4em;
   height: 5em;
   position: absolute;
-  bottom: 0em;
+  bottom: 0;
   left: 0;
   transition: all 1s;
 }
