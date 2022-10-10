@@ -2,9 +2,14 @@
   <div class="container">
     <transition
       name="move-elevator"
-      :style="{ transform: `translateY(${-abc}em)` }"
+      :style="{
+        transform: `translateY(${-abc}em)`,
+        transition: `all ${cba}s`,
+      }"
     >
-      <div class="elevator"></div>
+      <div class="elevator">
+        <span class="current-floor">{{ this.selectedItem[1] }}</span>
+      </div>
     </transition>
     <div
       class="floor"
@@ -32,6 +37,7 @@ export default {
       floor: 1,
       selectedItem: [],
       abc: 0,
+      cba: 0,
     };
   },
   components: {},
@@ -44,15 +50,33 @@ export default {
       console.log(this.floorHeight);
     },
     call(item) {
-      this.selectedItem.push(item);
-      if (this.floor < item) {
-        this.abc += (item - this.floor) * 5;
-      } else {
-        this.abc -= (this.floor - item) * 5;
+      if (this.selectedItem.includes(item) || this.floor === item) {
+        return;
       }
-      this.floor = item;
-      // this.selectedItem = this.selectedItem.splice(item, 1);
+      this.selectedItem.push(item);
+
+      if (this.selectedItem.length > 1) {
+        return;
+      }
+      setTimeout(async () => {
+        while (this.selectedItem.length > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+          this.testFunc();
+          this.afterTest();
+        }
+      }, 0);
     },
+
+    testFunc() {
+      this.abc += (this.selectedItem[0] - this.floor) * 5;
+      this.cba = Math.abs(this.selectedItem[0] - this.floor);
+    },
+
+    afterTest() {
+      this.floor = this.selectedItem[0];
+      this.selectedItem.splice(0, 1);
+    },
+
     styleObject(item) {
       return {
         backgroundColor: this.selectedItem.includes(item)
@@ -100,7 +124,16 @@ body {
   position: absolute;
   bottom: 0;
   left: 0;
-  transition: all 1s;
+}
+
+.current-floor {
+  background-color: #fff;
+  display: block;
+  margin-top: 10px;
+  width: 30px;
+  margin: 10px auto;
+  font-size: 18px;
+  border-radius: 3px;
 }
 
 .floor {
@@ -131,10 +164,6 @@ body {
   cursor: pointer;
   transition: all 0.5s;
 }
-
-/* .call-btn:active {
-  background-color: teal;
-} */
 
 .call-btn span {
   position: absolute;
