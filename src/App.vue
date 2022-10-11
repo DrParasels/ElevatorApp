@@ -72,20 +72,26 @@ export default {
     },
 
     async updateElevator() {
-      const sleep = (ms) => {
-        return new Promise((resolve) => {
-          setTimeout(() => resolve(), ms);
-        });
-      };
+      // debugger;
       this.timeItem = Math.abs(this.selectedItem[0] - this.floor);
       this.testFunc();
-      await sleep(this.timeItem * 1000).then(() => {});
-      console.log(this.selectedItem.shift());
-      await sleep(3000).then(() => {
+      await this.sleep(this.timeItem * 1000).then(() => {
+        this.selectedItem.splice(0, 1);
+        console.log("1");
+      });
+      await this.sleep(3000).then(() => {
+        console.log("2");
         if (this.selectedItem.length !== 0) {
+          console.log("3");
           return this.updateElevator();
         }
       });
+      // this.selectedItem.splice(0, 1);
+      // await new Promise((resolve) => {
+      //   resolve();
+      // }).then(() => {});
+      // await this.sleep(3000);
+      // await this.test1();
 
       // this.timeItem = Math.abs(this.selectedItem[0] - this.floor);
       // this.testFunc();
@@ -96,6 +102,18 @@ export default {
 
       // await new Promise((resolve) => setTimeout(resolve, 3000));
       // this.selectedItem.splice(0, 1);
+    },
+
+    sleep(ms) {
+      return new Promise((resolve) => {
+        setTimeout(() => resolve(), ms);
+      });
+    },
+
+    test1() {
+      return new Promise((resolve) => {
+        resolve();
+      });
     },
 
     testFunc() {
