@@ -14,7 +14,7 @@
         class="elevator"
       >
         <div v-if="show" class="current-floor">
-          <span></span>
+          <span :style="arrowDirection"></span>
           {{ this.floor }}
         </div>
       </div>
@@ -38,9 +38,9 @@
 <script>
 // [x] 5. Отступ у лифта | Критичность: 4
 // [x] 6. Мигание при простое | Критичность: 5
-// [] 2. Смена стрелки | Критичность: 5
+// [+/-] 2. Смена стрелки | Критичность: 5
 // [x] 4. :active | Критичность: 1
-// [] 3. LoclStorage | Критичность: 4
+// [x] 3. LoclStorage | Критичность: 4
 // [] 8. разбитие на компоненты | Критичность: 5
 // [] 1. название функций | Критичность: 2
 // [x] 9. добавить дефолные знчения | Критичность: 3
@@ -62,7 +62,6 @@ export default {
       flag: false,
       show: false,
       isActive: false,
-      floorsNumber: 0,
     };
   },
   DEFAULT_FLOORS: 5,
@@ -73,16 +72,19 @@ export default {
     while (this.$options.DEFAULT_FLOORS > 0) {
       this.floors.push(this.$options.DEFAULT_FLOORS--);
     }
+    // JSON.parse(localStorage.getItem("checked")) || []
+    this.floor = JSON.parse(localStorage.getItem("currentFloor")) || 1;
+    this.abc = JSON.parse(localStorage.getItem("abc")) || 0;
+    this.selectedItem = JSON.parse(localStorage.getItem("selectedFloor")) || [];
+    if (this.selectedItem.length > 0) {
+      this.updateElevator();
+    }
   },
 
   mounted() {
     this.elevatorHeight = this.$refs.heig[0].offsetHeight;
   },
   methods: {
-    itemStyle() {
-      return this.styleObject;
-    },
-
     callfunc(item) {
       if (this.selectedItem.includes(item) || this.floor === item) {
         return;
@@ -96,12 +98,17 @@ export default {
 
     async updateElevator() {
       // debugger;
-      this.flag = true;
-      this.show = true;
-      this.timeItem = Math.abs(this.selectedItem[0] - this.floor);
-      this.testFunc();
+
+      await new Promise((resolve) => {
+        resolve();
+      }).then(() => {
+        this.flag = true;
+        this.show = true;
+        this.timeItem = Math.abs(this.selectedItem[0] - this.floor);
+        this.testFunc();
+      });
       await this.sleep(this.timeItem * 1000).then(() => {
-        this.selectedItem.splice(0, 1);
+        this.selectedItem.shift();
         this.blinkfunc();
       });
       await this.sleep(this.$options.TIME_ELEVATOR_WAITING * 1000).then(() => {
@@ -127,12 +134,6 @@ export default {
       this.isActive = !this.isActive;
     },
 
-    arrowDirection() {
-      if (this.selectedItem[0] - this.floor < 0) {
-        return { transform: "rotate(180deg)" };
-      }
-    },
-
     styleObject(item) {
       return {
         border: this.selectedItem.includes(item)
@@ -144,6 +145,29 @@ export default {
       return {
         backgroundColor: this.selectedItem.includes(item) ? "red" : "green",
       };
+    },
+  },
+  computed: {
+    arrowDirection() {
+      console.log(this.abc);
+      if (this.selectedItem) {
+        return { transform: "rotate(180deg)" };
+      }
+      return { transform: "rotate(0deg)" };
+    },
+  },
+  watch: {
+    floor(newValue) {
+      localStorage.setItem("currentFloor", JSON.stringify(newValue));
+    },
+    abc(newValue) {
+      localStorage.setItem("abc", JSON.stringify(newValue));
+    },
+    selectedItem: {
+      handler(newValue) {
+        localStorage.setItem("selectedFloor", JSON.stringify(newValue));
+      },
+      deep: true,
     },
   },
 };
