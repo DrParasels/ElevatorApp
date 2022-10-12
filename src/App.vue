@@ -3,19 +3,31 @@
     <transition
       name="move-elevator"
       :style="{
-        transform: `translateY(${-abc}px)`,
-        transition: `transform ${timeItem}s linear`,
+        transform: `translateY(${-this.abc}px)`,
+        transition: `transform ${this.timeItem}s linear`,
       }"
     >
-      <div class="elevator">
-        <span class="current-floor">{{ this.selectedItem[0] }}</span>
+      <div
+        :class="{
+          blinker: isActive,
+        }"
+        class="elevator"
+      >
+        <div v-if="show" class="current-floor">
+          <span></span>
+          {{ this.floor }}
+        </div>
       </div>
     </transition>
     <div class="floor" ref="heig" v-for="(item, idx) of this.floors" :key="idx">
       <div class="lift-shaft"></div>
       <div class="hall">
         <div class="floor-num">{{ this.floors[idx] }}</div>
-        <button @click="call(item)" :style="styleObject(item)" class="call-btn">
+        <button
+          @click="callfunc(item)"
+          :style="styleObject(item)"
+          class="call-btn"
+        >
           <span :style="styleButton(item)"></span>
         </button>
       </div>
@@ -24,31 +36,45 @@
 </template>
 
 <script>
-// [] 5. Отступ у лифта | Критичность: 4
-// [] 6. Мигание при простое | Критичность: 5
+// [x] 5. Отступ у лифта | Критичность: 4
+// [x] 6. Мигание при простое | Критичность: 5
 // [] 2. Смена стрелки | Критичность: 5
 // [x] 4. :active | Критичность: 1
 // [] 3. LoclStorage | Критичность: 4
 // [] 8. разбитие на компоненты | Критичность: 5
-// [] 1. название функций | Критичность: 3
-// [] 9. добавить дефолные знчения | Критичность: 3
-// [] 7. подумать над функцией settimeout async | Критичность: 2
+// [] 1. название функций | Критичность: 2
+// [x] 9. добавить дефолные знчения | Критичность: 3
+// [x] 7. подумать над функцией settimeout async | Критичность: 2
 // [x] 10. немного поменять диазйн | Критичность: 1
-// [] 10. определить из макета высоту | Критичность: 2
+// [x] 10. определить из макета высоту | Критичность: 2
+// [] подумать над флагами: критичность 3
 
 export default {
   name: "App",
   data() {
     return {
-      floors: [5, 4, 3, 2, 1],
+      floors: [],
       floor: 1,
       selectedItem: [],
       abc: 0,
       timeItem: 0,
       elevatorHeight: 0,
+      flag: false,
+      show: false,
+      isActive: false,
+      floorsNumber: 0,
     };
   },
+  DEFAULT_FLOORS: 5,
+  TIME_ELEVATOR_WAITING: 3,
+
   components: {},
+  created() {
+    while (this.$options.DEFAULT_FLOORS > 0) {
+      this.floors.push(this.$options.DEFAULT_FLOORS--);
+    }
+  },
+
   mounted() {
     this.elevatorHeight = this.$refs.heig[0].offsetHeight;
   },
@@ -56,16 +82,13 @@ export default {
     itemStyle() {
       return this.styleObject;
     },
-    show() {
-      console.log(this.floorHeight);
-    },
-    call(item) {
+
+    callfunc(item) {
       if (this.selectedItem.includes(item) || this.floor === item) {
         return;
       }
       this.selectedItem.push(item);
-
-      if (this.selectedItem.length > 1) {
+      if (this.flag) {
         return;
       }
       this.updateElevator();
@@ -73,57 +96,41 @@ export default {
 
     async updateElevator() {
       // debugger;
+      this.flag = true;
+      this.show = true;
       this.timeItem = Math.abs(this.selectedItem[0] - this.floor);
       this.testFunc();
       await this.sleep(this.timeItem * 1000).then(() => {
         this.selectedItem.splice(0, 1);
-        console.log("1");
+        this.blinkfunc();
       });
-      await this.sleep(3000).then(() => {
-        console.log("2");
+      await this.sleep(this.$options.TIME_ELEVATOR_WAITING * 1000).then(() => {
+        this.blinkfunc();
+        this.show = false;
         if (this.selectedItem.length !== 0) {
-          console.log("3");
           return this.updateElevator();
         }
+        this.flag = false;
       });
-      // this.selectedItem.splice(0, 1);
-      // await new Promise((resolve) => {
-      //   resolve();
-      // }).then(() => {});
-      // await this.sleep(3000);
-      // await this.test1();
-
-      // this.timeItem = Math.abs(this.selectedItem[0] - this.floor);
-      // this.testFunc();
-
-      // await new Promise((resolve) =>
-      //   setTimeout(resolve, this.timeItem * 1000)
-      // );
-
-      // await new Promise((resolve) => setTimeout(resolve, 3000));
-      // this.selectedItem.splice(0, 1);
     },
-
+    testFunc() {
+      this.abc += (this.selectedItem[0] - this.floor) * this.elevatorHeight;
+      this.floor = this.selectedItem[0];
+    },
     sleep(ms) {
       return new Promise((resolve) => {
         setTimeout(() => resolve(), ms);
       });
     },
 
-    test1() {
-      return new Promise((resolve) => {
-        resolve();
-      });
+    blinkfunc() {
+      this.isActive = !this.isActive;
     },
 
-    testFunc() {
-      this.abc += (this.selectedItem[0] - this.floor) * this.elevatorHeight;
-      this.floor = this.selectedItem[0];
-    },
-
-    afterTest() {
-      this.selectedItem.splice(0, 1);
-      console.log(this.selectedItem, this.floor);
+    arrowDirection() {
+      if (this.selectedItem[0] - this.floor < 0) {
+        return { transform: "rotate(180deg)" };
+      }
     },
 
     styleObject(item) {
@@ -139,7 +146,6 @@ export default {
       };
     },
   },
-  computed: {},
 };
 </script>
 
@@ -169,6 +175,19 @@ body {
   position: relative;
 }
 
+.blinker {
+  animation-name: blinker;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+  animation-duration: 1s;
+}
+
+@keyframes blinker {
+  50% {
+    opacity: 0.4;
+  }
+}
+
 .elevator {
   background-color: teal;
   width: 4em;
@@ -178,11 +197,10 @@ body {
   left: 0;
 }
 
-.current-floor::before {
+.current-floor span {
+  margin-top: 3px;
+  display: block;
   content: "";
-  position: absolute;
-  left: 0.3em;
-  bottom: 0.35em;
   background-image: url("@/assets/up-arrow.png");
   background-size: contain;
   background-repeat: no-repeat;
@@ -193,13 +211,12 @@ body {
 .current-floor {
   padding-left: 0.5em;
   background-color: #fff;
-  display: block;
+  display: flex;
   margin-top: 10px;
   width: 30px;
   margin: 10px auto;
   font-size: 18px;
   border-radius: 3px;
-  position: relative;
 }
 
 .floor {
