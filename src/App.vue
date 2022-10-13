@@ -1,37 +1,28 @@
 <template>
   <div class="container">
-    <transition
-      name="move-elevator"
+    <div
+      class="elevator"
       :style="{
-        transform: `translateY(${-this.abc}px)`,
-        transition: `transform ${this.timeItem}s linear`,
+        transform: `translateY(${-heightToMove}px)`,
+        transition: `transform ${timeToMove}s linear`,
+      }"
+      :class="{
+        blinker: isActive,
       }"
     >
-      <div
-        :class="{
-          blinker: isActive,
-        }"
-        class="elevator"
-      >
-        <div v-if="show" class="current-floor">
-          <span :style="arrowDirection"></span>
-          {{ this.floor }}
-        </div>
-      </div>
-    </transition>
-    <div class="floor" ref="heig" v-for="(item, idx) of this.floors" :key="idx">
-      <div class="lift-shaft"></div>
-      <div class="hall">
-        <div class="floor-num">{{ this.floors[idx] }}</div>
-        <button
-          @click="callfunc(item)"
-          :style="styleObject(item)"
-          class="call-btn"
-        >
-          <span :style="styleButton(item)"></span>
-        </button>
+      <div v-if="flag" class="current-floor">
+        <span :style="{ transform: `rotate(${rotateValue}deg)` }"></span>
+        {{ elevatorPosition }}
       </div>
     </div>
+    <floor-item
+      ref="height"
+      @select-floor="callfunc"
+      :floor="floor"
+      :calls-floors="callsFloors"
+      v-for="floor of floors"
+      :key="floor"
+    />
   </div>
 </template>
 
@@ -41,129 +32,120 @@
 // [+/-] 2. Смена стрелки | Критичность: 5
 // [x] 4. :active | Критичность: 1
 // [x] 3. LoclStorage | Критичность: 4
-// [] 8. разбитие на компоненты | Критичность: 5
-// [] 1. название функций | Критичность: 2
+// [x] 8. разбитие на компоненты | Критичность: 5
+// [x] 1. название функций | Критичность: 2
 // [x] 9. добавить дефолные знчения | Критичность: 3
 // [x] 7. подумать над функцией settimeout async | Критичность: 2
 // [x] 10. немного поменять диазйн | Критичность: 1
 // [x] 10. определить из макета высоту | Критичность: 2
-// [] подумать над флагами: критичность 3
+// [+/-] подумать над флагами: критичность 3
+import FloorItem from "@/components/FloorItem.vue";
 
 export default {
   name: "App",
+
+  components: {
+    FloorItem,
+  },
+
   data() {
     return {
       floors: [],
-      floor: 1,
-      selectedItem: [],
-      abc: 0,
-      timeItem: 0,
+      callsFloors: [],
+      heightToMove: 0,
+      timeToMove: 0,
+      elevatorPosition: 1,
       elevatorHeight: 0,
       flag: false,
-      show: false,
       isActive: false,
+      rotateValue: 0,
     };
   },
   DEFAULT_FLOORS: 5,
   TIME_ELEVATOR_WAITING: 3,
-
-  components: {},
   created() {
     while (this.$options.DEFAULT_FLOORS > 0) {
       this.floors.push(this.$options.DEFAULT_FLOORS--);
     }
-    // JSON.parse(localStorage.getItem("checked")) || []
-    this.floor = JSON.parse(localStorage.getItem("currentFloor")) || 1;
-    this.abc = JSON.parse(localStorage.getItem("abc")) || 0;
-    this.selectedItem = JSON.parse(localStorage.getItem("selectedFloor")) || [];
-    if (this.selectedItem.length > 0) {
-      this.updateElevator();
+    this.elevatorPosition =
+      JSON.parse(localStorage.getItem("currentFloor")) || 1;
+    this.heightToMove = JSON.parse(localStorage.getItem("heightToMove")) || 0;
+    this.callsFloors = JSON.parse(localStorage.getItem("selectedFloor")) || [];
+    if (this.callsFloors.length > 0) {
+      this.moveElevator();
     }
-  },
-
-  mounted() {
-    this.elevatorHeight = this.$refs.heig[0].offsetHeight;
+    this.$nextTick(() => {
+      this.elevatorHeight = this.$refs.height[0].floorHeight;
+    });
   },
   methods: {
-    callfunc(item) {
-      if (this.selectedItem.includes(item) || this.floor === item) {
+    callfunc(floor) {
+      if (this.callsFloors.includes(floor) || this.elevatorPosition === floor) {
         return;
       }
-      this.selectedItem.push(item);
+      this.callsFloors.push(floor);
       if (this.flag) {
         return;
       }
-      this.updateElevator();
+      this.moveElevator();
     },
-
-    async updateElevator() {
-      // debugger;
-
+    async moveElevator() {
       await new Promise((resolve) => {
         resolve();
       }).then(() => {
         this.flag = true;
-        this.show = true;
-        this.timeItem = Math.abs(this.selectedItem[0] - this.floor);
-        this.testFunc();
+        this.arrowDirection();
+        this.timeHeightToMove();
       });
-      await this.sleep(this.timeItem * 1000).then(() => {
-        this.selectedItem.shift();
+
+      await this.sleep(this.timeToMove * 1000).then(() => {
+        this.callsFloors.shift();
         this.blinkfunc();
       });
+
       await this.sleep(this.$options.TIME_ELEVATOR_WAITING * 1000).then(() => {
         this.blinkfunc();
         this.show = false;
-        if (this.selectedItem.length !== 0) {
-          return this.updateElevator();
+        if (this.callsFloors.length !== 0) {
+          return this.moveElevator();
         }
         this.flag = false;
       });
-    },
-    testFunc() {
-      this.abc += (this.selectedItem[0] - this.floor) * this.elevatorHeight;
-      this.floor = this.selectedItem[0];
     },
     sleep(ms) {
       return new Promise((resolve) => {
         setTimeout(() => resolve(), ms);
       });
     },
+    timeHeightToMove() {
+      this.timeToMove = Math.abs(this.callsFloors[0] - this.elevatorPosition);
+      this.heightToMove +=
+        (this.callsFloors[0] - this.elevatorPosition) * this.elevatorHeight;
+      this.elevatorPosition = this.callsFloors[0];
+    },
 
     blinkfunc() {
       this.isActive = !this.isActive;
     },
-
-    styleObject(item) {
-      return {
-        border: this.selectedItem.includes(item)
-          ? "2px solid red"
-          : "1px solid #000",
-      };
-    },
-    styleButton(item) {
-      return {
-        backgroundColor: this.selectedItem.includes(item) ? "red" : "green",
-      };
-    },
-  },
-  computed: {
     arrowDirection() {
-      console.log(this.abc);
-      if (this.selectedItem) {
-        return { transform: "rotate(180deg)" };
+      console.log(this.elevatorPosition, this.callsFloors[0]);
+      if (this.elevatorPosition - this.callsFloors[0] > 0) {
+        console.log("2");
+        this.rotateValue = 180;
+        return;
       }
-      return { transform: "rotate(0deg)" };
+      this.rotateValue = 0;
     },
   },
+  computed: {},
   watch: {
-    floor(newValue) {
+    elevatorPosition(newValue) {
       localStorage.setItem("currentFloor", JSON.stringify(newValue));
     },
-    abc(newValue) {
-      localStorage.setItem("abc", JSON.stringify(newValue));
+    heightToMove(newValue) {
+      localStorage.setItem("heightToMove", JSON.stringify(newValue));
     },
-    selectedItem: {
+    callsFloors: {
       handler(newValue) {
         localStorage.setItem("selectedFloor", JSON.stringify(newValue));
       },
@@ -241,45 +223,5 @@ body {
   margin: 10px auto;
   font-size: 18px;
   border-radius: 3px;
-}
-
-.floor {
-  display: flex;
-  border-bottom: 1px solid #000;
-}
-
-.lift-shaft {
-  width: 4em;
-  border-right: 1px solid #000;
-  padding: 2.5em 0;
-}
-
-.hall {
-  padding-left: 1em;
-  padding-top: 1em;
-}
-.call-btn:active {
-  background-color: aquamarine;
-}
-
-.call-btn {
-  outline: none;
-  border: 1px solid #000;
-  background-color: transparent;
-  padding: 1em;
-  position: relative;
-  cursor: pointer;
-  transition: all 0.2s;
-  border-radius: 1em;
-}
-
-.call-btn span {
-  position: absolute;
-  width: 0.8em;
-  height: 0.8em;
-  border-radius: 50%;
-  background-color: green;
-  top: 0.6em;
-  left: 0.6em;
 }
 </style>
