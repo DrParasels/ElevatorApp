@@ -27,18 +27,6 @@
 </template>
 
 <script>
-// [x] 5. Отступ у лифта | Критичность: 4
-// [x] 6. Мигание при простое | Критичность: 5
-// [+/-] 2. Смена стрелки | Критичность: 5
-// [x] 4. :active | Критичность: 1
-// [x] 3. LoclStorage | Критичность: 4
-// [x] 8. разбитие на компоненты | Критичность: 5
-// [x] 1. название функций | Критичность: 2
-// [x] 9. добавить дефолные знчения | Критичность: 3
-// [x] 7. подумать над функцией settimeout async | Критичность: 2
-// [x] 10. немного поменять диазйн | Критичность: 1
-// [x] 10. определить из макета высоту | Критичность: 2
-// [+/-] подумать над флагами: критичность 3
 import FloorItem from "@/components/FloorItem.vue";
 
 export default {
@@ -128,9 +116,7 @@ export default {
       this.isActive = !this.isActive;
     },
     arrowDirection() {
-      console.log(this.elevatorPosition, this.callsFloors[0]);
       if (this.elevatorPosition - this.callsFloors[0] > 0) {
-        console.log("2");
         this.rotateValue = 180;
         return;
       }
