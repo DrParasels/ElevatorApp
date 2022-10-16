@@ -1,6 +1,10 @@
 <template>
   <div ref="height" class="floor">
-    <div class="lift-shaft"></div>
+    <div
+      v-for="numbersOfelevator in halls"
+      :key="numbersOfelevator"
+      class="lift-shaft"
+    ></div>
     <div class="hall">
       <div class="floor-num">{{ floor }}</div>
       <button
@@ -20,6 +24,7 @@ export default {
   data() {
     return {
       floorHeight: 0,
+      halls: 3,
     };
   },
   props: {
