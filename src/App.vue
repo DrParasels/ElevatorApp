@@ -1,21 +1,28 @@
 <template>
+  <h1>Move Elevator App</h1>
+
+  <div class="input-section">
+    <input type="number" />
+    <input type="number" />
+    <button>Жмяк</button>
+  </div>
   <div class="container">
     <div
       v-for="item in items"
       :key="item"
       class="elevator"
       :style="{
-        transform: `translateY(${-item.heightToMove}px)`,
-        transition: `transform ${item.timeToMove}s linear`,
-        left: `${item.id * 81 - 81}px`,
+        transform: `translateY(${-heightToMove[item]}px)`,
+        transition: `transform ${timeToMove[item]}s linear`,
+        left: `${item * 81}px`,
       }"
       :class="{
-        blinker: item.isActive,
+        blinker: isActive[item],
       }"
     >
-      <div v-if="item.flag" class="current-floor">
-        <span :style="{ transform: `rotate(${item.rotateValue}deg)` }"></span>
-        {{ item.elevatorPosition }}
+      <div v-if="flag[item]" class="current-floor">
+        <span :style="{ transform: `rotate(${rotateValue[item]}deg)` }"></span>
+        {{ elevatorPosition[item] }}
       </div>
     </div>
     <floor-item
@@ -43,62 +50,45 @@ export default {
     return {
       floors: [],
       callsFloors: [],
-      heightToMove: 0,
-      timeToMove: 0,
-      elevatorPosition: 1,
-      elevatorHeight: 0,
-      flag: false,
-      isActive: false,
-      rotateValue: 0,
 
+      heightToMove: [],
+      timeToMove: [],
+      elevatorPosition: [],
+      callsArr: [],
+      flag: [],
+      isActive: [],
+      rotateValue: [],
       currentEle: 1,
-      items: [
-        {
-          id: 1,
-          heightToMove: 0,
-          timeToMove: 0,
-          elevatorPosition: 1,
-          callsArr: [],
-          flag: false,
-          isActive: false,
-          rotateValue: 0,
-        },
-        {
-          id: 2,
-          heightToMove: 0,
-          timeToMove: 0,
-          elevatorPosition: 1,
-          callsArr: [],
-          flag: false,
-          isActive: false,
-          rotateValue: 0,
-        },
-        {
-          id: 3,
-          heightToMove: 0,
-          timeToMove: 0,
-          elevatorPosition: 1,
-          callsArr: [],
-          flag: false,
-          isActive: false,
-          rotateValue: 0,
-        },
-      ],
+      items: [],
     };
   },
   DEFAULT_FLOORS: 5,
+  DEFAULT_ELEVATORS: 3,
   TIME_ELEVATOR_WAITING: 3,
   created() {
     while (this.$options.DEFAULT_FLOORS > 0) {
       this.floors.push(this.$options.DEFAULT_FLOORS--);
     }
-    // this.elevatorPosition =
-    //   JSON.parse(localStorage.getItem("currentFloor")) || 1;
-    // this.heightToMove = JSON.parse(localStorage.getItem("heightToMove")) || 0;
-    // this.callsFloors = JSON.parse(localStorage.getItem("selectedFloor")) || [];
-    if (this.callsFloors.length > 0) {
-      this.moveElevator();
+    while (this.$options.DEFAULT_ELEVATORS > 0) {
+      this.items.push(--this.$options.DEFAULT_ELEVATORS);
+      this.heightToMove.push(0);
+      this.timeToMove.push(0);
+      this.elevatorPosition.push(1);
+      this.callsArr.push([]);
+      this.flag.push(false);
+      this.isActive.push(false);
+      this.rotateValue.push(0);
     }
+    this.items = this.items.reverse();
+    console.log(this.items);
+    // console.log(this.items);
+    // this.elevatorPosition =
+    //   JSON.parse(localStorage.getItem("currentFloor")) || [];
+    // this.heightToMove = JSON.parse(localStorage.getItem("heightToMove")) || [];
+    // this.callsArr = JSON.parse(localStorage.getItem("selectedFloor")) || [];
+    // if (this.callsFloors.length > 0) {
+    //   this.moveElevator();
+    // }
     this.$nextTick(() => {
       this.elevatorHeight = this.$refs.height[0].floorHeight;
     });
@@ -110,50 +100,44 @@ export default {
       let time = 0;
       for (let i = 0; i < arr.length - 1; i++) {
         time += Math.abs(arr[i] - arr[i + 1]);
+        console.log(time);
       }
-      console.log(time + arr.length * 3 + Math.abs(position - floor), "2222");
       return time + arr.length * 3 + Math.abs(position - floor);
     },
     elevatorForCall(floor) {
       let ele = 0;
+      // console.log(this.items[0], this.items[1], this.items[2]);
       for (let i = 1; i < this.items.length; i++) {
         if (
-          this.findTime(
-            this.items[i].callsArr,
-            this.items[i].elevatorPosition,
-            floor
-          ) <
-          this.findTime(
-            this.items[ele].callsArr,
-            this.items[ele].elevatorPosition,
-            floor
-          )
+          this.findTime(this.callsArr[i], this.elevatorPosition[i], floor) <
+          this.findTime(this.callsArr[ele], this.elevatorPosition[ele], floor)
         ) {
           ele = i;
         }
       }
-      console.log(ele, "2323232");
       return ele;
     },
     callfunc(floor) {
+      console.log(this.items);
       if (
-        this.items.find((i) => i.callsArr.includes(floor)) ||
-        this.items.find((i) => i.elevatorPosition === floor)
+        this.elevatorPosition.includes(floor) ||
+        this.callsArr.find((i) => i === floor)
       ) {
-        console.log("1");
+        console.log("2");
         return;
       }
 
       this.callsFloors.push(floor);
       this.currentElev = this.elevatorForCall(floor);
+      console.log(this.currentElev);
 
-      this.items[this.currentElev].callsArr.push(floor);
+      this.callsArr[this.currentElev].push(floor);
 
-      if (this.items[this.currentElev].callsArr.length > 1) {
+      if (this.callsArr[this.currentElev].length > 1) {
         return;
       }
 
-      this.moveElevator(this.items[this.currentElev]);
+      this.moveElevator(this.currentElev);
       // console.log("1");
     },
     async moveElevator(item) {
@@ -161,25 +145,29 @@ export default {
       await new Promise((resolve) => {
         resolve();
       }).then(() => {
-        item.flag = true;
-        item.timeToMove = Math.abs(item.callsArr[0] - item.elevatorPosition);
-        item.heightToMove +=
-          (item.callsArr[0] - item.elevatorPosition) * this.elevatorHeight;
-        item.elevatorPosition = item.callsArr[0];
+        this.flag[item] = true;
+        this.arrowDirection(item);
+        this.timeToMove[item] = Math.abs(
+          this.callsArr[item][0] - this.elevatorPosition[item]
+        );
+        this.heightToMove[item] +=
+          (this.callsArr[item][0] - this.elevatorPosition[item]) *
+          this.elevatorHeight;
+        this.elevatorPosition[item] = this.callsArr[item][0];
       });
 
-      await this.sleep(item.timeToMove * 1000).then(() => {
+      await this.sleep(this.timeToMove[item] * 1000).then(() => {
         this.blinkfunc(item);
       });
 
       await this.sleep(this.$options.TIME_ELEVATOR_WAITING * 1000).then(() => {
         this.blinkfunc(item);
         this.callsFloors.shift();
-        item.callsArr.shift();
-        if (item.callsArr.length !== 0) {
+        this.callsArr[item].shift();
+        if (this.callsArr[item].length !== 0) {
           return this.moveElevator(item);
         }
-        item.flag = false;
+        this.flag[item] = false;
       });
     },
     sleep(ms) {
@@ -188,25 +176,31 @@ export default {
       });
     },
     blinkfunc(item) {
-      item.isActive = !item.isActive;
+      this.isActive[item] = !this.isActive[item];
     },
     arrowDirection(item) {
-      if (item.elevatorPosition - item.callsFloors[0] > 0) {
-        item.rotateValue = 180;
+      if (this.elevatorPosition[item] - this.callsArr[item][0] > 0) {
+        this.rotateValue[item] = 180;
         return;
       }
-      item.rotateValue = 0;
+      this.rotateValue[item] = 0;
     },
   },
 
   watch: {
-    // elevatorPosition(newValue) {
-    //   localStorage.setItem("currentFloor", JSON.stringify(newValue));
+    // elevatorPosition: {
+    //   handler(newValue) {
+    //     localStorage.setItem("currentFloor", JSON.stringify(newValue));
+    //   },
+    //   deep: true,
     // },
-    // heightToMove(newValue) {
-    //   localStorage.setItem("heightToMove", JSON.stringify(newValue));
+    // heightToMove: {
+    //   handler(newValue) {
+    //     localStorage.setItem("heightToMove", JSON.stringify(newValue));
+    //   },
+    //   deep: true,
     // },
-    // callsFloors: {
+    // callsArr: {
     //   handler(newValue) {
     //     localStorage.setItem("selectedFloor", JSON.stringify(newValue));
     //   },
@@ -240,6 +234,14 @@ body {
   font-size: 20px;
   background-color: #fff;
   position: relative;
+}
+
+.input-section {
+  display: flex;
+  justify-content: space-around;
+  max-width: 50em;
+  margin: 0 auto;
+  margin-bottom: 30px;
 }
 
 .blinker {
