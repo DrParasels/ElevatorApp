@@ -1,7 +1,7 @@
 <template>
   <div ref="height" class="floor">
     <div
-      v-for="numbersOfelevator in halls"
+      v-for="numbersOfelevator in items"
       :key="numbersOfelevator"
       class="lift-shaft"
     ></div>
@@ -24,7 +24,7 @@ export default {
   data() {
     return {
       floorHeight: 0,
-      halls: 3,
+      halls: [1, 2, 3],
     };
   },
   props: {
@@ -32,31 +32,38 @@ export default {
       type: Number,
       required: true,
     },
-    callsFloors: {
+    callsArr: {
       type: Array,
       required: true,
     },
     heightFloor: {
       type: Number,
     },
+    items: {
+      type: Array,
+      required: true,
+    },
   },
   mounted() {
     this.floorHeight = this.$refs.height.offsetHeight;
+    // console.log(this.floorHeight);
   },
   methods: {
     callfunc(floor) {
-      this.$emit("select-floor", floor);
+      this.$emit("select-floor", floor, this.floorHeight);
     },
     styleButtonBorder(floor) {
       return {
-        border: this.callsFloors.includes(floor)
+        border: this.callsArr.find((i) => i.includes(floor))
           ? "2px solid red"
           : "1px solid #000",
       };
     },
     styleButtonColor(floor) {
       return {
-        backgroundColor: this.callsFloors.includes(floor) ? "red" : "green",
+        backgroundColor: this.callsArr.find((i) => i.includes(floor))
+          ? "red"
+          : "green",
       };
     },
   },
