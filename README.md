@@ -1,3 +1,4 @@
+![elevatorApp](https://user-images.githubusercontent.com/58046251/196736394-e52af7e5-d62c-41ea-a987-9f28d04b5809.gif)
 # elevator_project
 
 ## Project setup
